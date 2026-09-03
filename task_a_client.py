@@ -49,7 +49,7 @@ def fetch(host: str, port: int, message: bytes) -> bytes:
     response = b''
     while True:
         data_chunk = client_socket.recv(2048)
-        
+
         if not data_chunk: break
         else: response += data_chunk
 
@@ -59,9 +59,4 @@ def fetch(host: str, port: int, message: bytes) -> bytes:
 
 
 if __name__ == "__main__":
-    # Optional: you can add your own smoke test here.  This block is ignored
-    # by the autograder.
-    print(
-        fetch('localhost', 8888, b'Hello World!').decode()
-    )
     pass

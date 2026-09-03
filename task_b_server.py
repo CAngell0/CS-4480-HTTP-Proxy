@@ -66,7 +66,4 @@ def serve_one(port: int) -> bytes:
 
 
 if __name__ == "__main__":
-    print(
-        serve_one(8888).decode()
-    )
     pass
