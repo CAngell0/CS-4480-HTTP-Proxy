@@ -28,7 +28,6 @@ Objectives exercised: 1, 3, 5, 6  (primarily objectives 3 and 6)
 
 import socket
 
-
 def recv_exactly(sock: socket.socket, n: int) -> bytes | None:
     """
     Read exactly `n` bytes from `sock`, blocking until they arrive.
@@ -41,12 +40,43 @@ def recv_exactly(sock: socket.socket, n: int) -> bytes | None:
         The n bytes as a `bytes` object, OR
         None if the peer closed the connection before n bytes arrived.
     """
-    # ---- TODO: implement below this line ----
 
-    raise NotImplementedError("Task C: implement recv_exactly()")
+    # Constant used for the safe read amount so as to not read bytes from the next message
+    SAFE_READ_AMOUNT = 2048
+    # Keeps track of how many bytes are left to be read
+    remaining_bytes = n
+    # Holds the data that has been collected so far
+    recieved = b''
 
-    # ---- TODO: implement above this line ----
+    # While there is still bytes to read...
+    while remaining_bytes != 0:
+        data_chunk = b''
+
+        # If the remaining bytes to read are more than the amount I can safely read. Read a chunk 
+        # of bytes at an amount that is safe
+        if remaining_bytes >= SAFE_READ_AMOUNT:
+            data_chunk = sock.recv(SAFE_READ_AMOUNT)
+            remaining_bytes -= SAFE_READ_AMOUNT
+        # Otherwise, just read the chunk of data that's left after the safe reads.
+        else:
+            data_chunk = sock.recv(remaining_bytes)
+            remaining_bytes = 0
+
+        # If the data flow ended before all the bytes have been read, break
+        if not data_chunk: break;
+        else: recieved += data_chunk
+
+    if len(recieved) < n: return None
+    else: return recieved
 
 
 if __name__ == "__main__":
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('localhost', 8888))
+    sock.sendall(b'Hello World!')
+    sock.shutdown(socket.SHUT_WR)
+
+    data = recv_exactly(sock, 100)
+    print("None" if data is None else data.decode())
+
     pass

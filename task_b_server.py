@@ -52,9 +52,9 @@ def serve_one(port: int) -> bytes:
     recieved = b''
     while True:
         data_chunk = client.recv(2048)
-        if not data_chunk: break
 
-        recieved += data_chunk
+        if not data_chunk: break
+        else: recieved += data_chunk
 
     # Send the data back with the REPLY prefix
     client.sendall(b'REPLY: ' + recieved)

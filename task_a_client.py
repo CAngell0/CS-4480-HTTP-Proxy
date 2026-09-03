@@ -49,9 +49,9 @@ def fetch(host: str, port: int, message: bytes) -> bytes:
     response = b''
     while True:
         data_chunk = client_socket.recv(2048)
+        
         if not data_chunk: break
-
-        response += data_chunk
+        else: response += data_chunk
 
     # Close the connection and return the response.
     client_socket.close()
