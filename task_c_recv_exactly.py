@@ -46,28 +46,20 @@ def recv_exactly(sock: socket.socket, n: int) -> bytes | None:
     # Keeps track of how many bytes are left to be read
     remaining_bytes = n
     # Holds the data that has been collected so far
-    recieved = b''
+    received = bytearray()
 
-    # While there is still bytes to read...
-    while remaining_bytes != 0:
-        data_chunk = b''
+    # Keep reading until we have exactly n bytes or the peer closes early
+    while remaining_bytes > 0:
+        chunk_size = min(SAFE_READ_AMOUNT, remaining_bytes)
+        data_chunk = sock.recv(chunk_size)
 
-        # If the remaining bytes to read are more than the amount I can safely read. Read a chunk 
-        # of bytes at an amount that is safe
-        if remaining_bytes >= SAFE_READ_AMOUNT:
-            data_chunk = sock.recv(SAFE_READ_AMOUNT)
-            remaining_bytes -= SAFE_READ_AMOUNT
-        # Otherwise, just read the chunk of data that's left after the safe reads.
-        else:
-            data_chunk = sock.recv(remaining_bytes)
-            remaining_bytes = 0
+        # If the data flow ended before all bytes have been read, return
+        if not data_chunk: return None
 
-        # If the data flow ended before all the bytes have been read, break
-        if not data_chunk: break;
-        else: recieved += data_chunk
+        received.extend(data_chunk)
+        remaining_bytes -= len(data_chunk)
 
-    if len(recieved) < n: return None
-    else: return recieved
+    return bytes(received)
 
 
 if __name__ == "__main__":
