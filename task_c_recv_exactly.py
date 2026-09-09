@@ -1,3 +1,5 @@
+# Note from student developer (Carson Angell). AI (VSCode Copilot) was using help solve the final bug that was present in this code.
+
 """
 Task C: recv_exactly.
 
