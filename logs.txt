@@ -1,6 +1,2 @@
-Performing Test #1:
-['GET http://localhost:19000/ HTTP/1.0', 'User-Agent : LinuxUser/1.0', 'User-Agent : LinuxUser/1.0', '', '']
-[{'User-Agent': 'LinuxUser/1.0'}, {'User-Agent': 'LinuxUser/1.0'}]
-<__main__.HTTPRequest object at 0x7fc76eb59400>
-Clean Response   ->   HTTP/1.0 502 Bad Gateway\r\nContent-Length: 15\r\nConnection: close\r\n\r\n502 Bad Gateway
-
+Test Result for Clean  ->  True
+Test Result for Buggy  ->  True
