@@ -1,0 +1,35 @@
+Performing Test #1:
+Clean Response   ->   HTTP/1.0 502 Bad Gateway\r\nContent-Length: 15\r\nConnection: close\r\n\r\n502 Bad Gateway
+Buggy Response   ->   HTTP/1.0 502 Bad Gateway\r\nContent-Length: 15\r\nConnection: close\r\n\r\n502 Bad Gateway
+
+Performing Test #2:
+Clean Response   ->   HTTP/1.0 400 Bad Request\r\nContent-Length: 15\r\nConnection: close\r\n\r\n400 Bad Request
+Buggy Response   ->   HTTP/1.0 502 Bad Gateway\r\nContent-Length: 15\r\nConnection: close\r\n\r\n502 Bad Gateway
+
+Performing Test #3:
+Clean Response   ->   HTTP/1.0 400 Bad Request\r\nContent-Length: 15\r\nConnection: close\r\n\r\n400 Bad Request
+Buggy Response   ->   HTTP/1.0 502 Bad Gateway\r\nContent-Length: 15\r\nConnection: close\r\n\r\n502 Bad Gateway
+
+Performing Test #4:
+Clean Response   ->   HTTP/1.0 501 Not Implemented\r\nContent-Length: 19\r\nConnection: close\r\n\r\n501 Not Implemented
+Buggy Response   ->   HTTP/1.0 501 Not Implemented\r\nContent-Length: 19\r\nConnection: close\r\n\r\n501 Not Implemented
+
+Performing Test #5:
+Clean Response   ->   HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
+Origin Recieved Clean   ->   b'GET /path HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n'
+Buggy Response   ->   HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
+Origin Recieved Buggy   ->   b'GET http://localhost:19000/path HTTP/1.0\r\n\r\n'
+
+Performing Test #6:
+Clean Response   ->   HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
+Origin Recieved Clean   ->   b'GET /path HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n'
+Buggy Response   ->   HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
+Origin Recieved Buggy   ->   b'GET http://localhost:19000/path HTTP/1.0\r\nConnection: keep-alive\r\n\r\n'
+
+Performing Test #7:
+Origin Recieved Clean Before Complete  ->   None
+Origin Recieved Clean After Complete  ->   b'GET / HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n'
+Clean Response  ->  HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
+Origin Recieved Buggy Before Complete  ->   None
+Origin Recieved Buggy After Complete  ->   b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
+Buggy Response  ->  HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 16\r\nConnection: close\r\n\r\n................
