@@ -1,3 +1,7 @@
+# Author: Carson Angell
+# Class: CS-4480
+# Date: 9/18/2026
+
 import socket
 import time
 import re as regex
@@ -5,14 +9,16 @@ from typing import Callable
 
 from M1_Handout.test_harness import MockOrigin
 
+# Constants defined for all tests
 TARGET_HOST = 'localhost'
-MOCK_ORIGIN_PORT = 19000
 PORTS = {
+    'mock_origin': 19000,
     'clean': 2100,
     'buggy': 2200
 }
 
-
+# Method that was copied from Task A on Milestone 0. This is used in the tests below in order to make basic
+# communication and have less boiler plate code.
 def fetch(host: str, port: int, message: bytes) -> bytes:
     """
     Send `message` to a TCP server at (host, port) and return everything the
@@ -50,6 +56,8 @@ def fetch(host: str, port: int, message: bytes) -> bytes:
     return response
 
 
+# A helper class used to parse HTTP responses from raw text into objects. Makes testing for incorrect properties
+# much easier, smaller and readable.
 class HTTPResponse:
     def __init__(self, body: bytes) -> None:
         self.raw = body.decode()
@@ -74,9 +82,11 @@ class HTTPResponse:
         return self.raw.replace('\r\n', '\\r\\n')
 
 
+# A helper class used to parse HTTP requests from raw text into objects. Makes testing for incorrect properties
+# much easier, smaller and readable.
 class HTTPRequest:
-    def __init__(self, body: str) -> None:
-        self.raw = body
+    def __init__(self, body: bytes) -> None:
+        self.raw = body.decode()
         tokens = self.raw.split('\r\n')
 
         self.method : str = tokens[0].split(' ')[0]
@@ -94,6 +104,8 @@ class HTTPRequest:
             return self.raw.replace('\r\n', '\\r\\n')
 
 
+
+
 def test_one(port: int) -> bool: # Testing basic request to make sure it knows a valid request
     body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
     response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
@@ -101,28 +113,53 @@ def test_one(port: int) -> bool: # Testing basic request to make sure it knows a
 
 
 
-def test_two(port : int) -> bool: # Testing unsupported HTTP protocol version # - 1 Discrepenecy Found
-    body = b'GET http://localhost:19000/ HTTP/1.1\r\n\r\n'
-    response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
-    return response.code != 400
+
+def test_two(port : int) -> bool:
+    """
+    Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that's
+    not using HTTP/1.0 protocol.
+
+    - Successfully locates 1 bug
+    """
+    body = 'GET http://localhost:19000/ HTTP/$\r\n\r\n'
+
+    if HTTPResponse( fetch( TARGET_HOST, port, body.replace('$', '1.1').encode() ) ).code != 400 : return True
+    if HTTPResponse( fetch( TARGET_HOST, port, body.replace('$', '2.0').encode() ) ).code != 400 : return True
+    if HTTPResponse( fetch( TARGET_HOST, port, body.replace('$', '3.0').encode() ) ).code != 400 : return True
+
+    return False
 
 
 
-def test_three(port : int) -> bool: # Testing malformed headers # - 1 Discrepency Found
+
+def test_three(port : int) -> bool:
+    """
+    Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that has
+    malformed headers
+    
+    - Successfully locates 1 bug
+    """
     body = b'GET http://localhost:19000/ HTTP/1.0\r\nUser-Agent : LinuxUser/1.0\r\n\r\n'
     response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
     return response.code != 400
 
 
 
-def test_four(port: int) -> bool: # Testing to make sure path is relative on origin # - 1 Descrepency Found
-    origin = MockOrigin(MOCK_ORIGIN_PORT)
+
+def test_four(port: int) -> bool:
+    """
+    Tests to make sure that the target proxy forwards the request using a relative URL path and not an
+    absolute one. Uses the mock origin to receive the request.
+    
+    - Successfully locates 1 bug
+    """
+    origin = MockOrigin(PORTS['mock_origin'])
     body = b'GET http://localhost:19000/path HTTP/1.0\r\n\r\n'
 
     try:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): raise
-        received = HTTPRequest( origin.received.decode() )
+        received = HTTPRequest( origin.received )
     finally:
         origin.close()
 
@@ -130,14 +167,20 @@ def test_four(port: int) -> bool: # Testing to make sure path is relative on ori
 
 
 
-def test_five(port: int) -> bool: # Testing to make mock origin receives host header # - 1 Descrepency Found
-    origin = MockOrigin(MOCK_ORIGIN_PORT)
+
+def test_five(port: int) -> bool:
+    """
+    Tests to make sure that the target proxy forwards the request with a correct Host header.
+    
+    - Successfully locates 1 bug
+    """
+    origin = MockOrigin(PORTS['mock_origin'])
     body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
 
     try:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): raise
-        received = HTTPRequest( origin.received.decode() )
+        received = HTTPRequest( origin.received )
         if {'Host': 'localhost'} not in received.headers: return True
     finally:
         origin.close()
@@ -146,14 +189,20 @@ def test_five(port: int) -> bool: # Testing to make mock origin receives host he
 
 
 
-def test_six(port: int) -> bool: # Testing to make mock origin recieves changed connection header # - 1 Descrepency Found
-    origin = MockOrigin(MOCK_ORIGIN_PORT)
+
+def test_six(port: int) -> bool:
+    """
+    Tests to make sure that the target proxy forwards the request with a corrected and non-missing Connection header.
+    
+    - Successfully locates 1 bug
+    """
+    origin = MockOrigin(PORTS['mock_origin'])
     body = b'GET http://localhost:19000/ HTTP/1.0\r\nConnection: keep-alive\r\n\r\n'
 
     try:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): raise
-        received = HTTPRequest( origin.received.decode() )
+        received = HTTPRequest( origin.received )
         if {'Connection': 'close'} not in received.headers: return True
     finally:
         origin.close()
@@ -194,7 +243,7 @@ def test_six(port: int) -> bool: # Testing to make mock origin recieves changed 
 
 #         time.sleep(1)
 
-
+# Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
         test_one,
@@ -206,6 +255,7 @@ if __name__ == "__main__":
     ]
 
     for test in tests:
+        print(f'Running {test.__name__}')
         print('Test Result for Buggy  ->  ' + str( test( PORTS['buggy'] ) ))
         time.sleep(0.5)
 
