@@ -5,23 +5,55 @@ from typing import Callable
 
 from M1_Handout.test_harness import MockOrigin
 
-from toolkit.task_a_client import fetch
-
-ORIGIN : MockOrigin
 TARGET_HOST = 'localhost'
+MOCK_ORIGIN_PORT = 19000
 PORTS = {
     'clean': 2100,
     'buggy': 2200
 }
 
 
+def fetch(host: str, port: int, message: bytes) -> bytes:
+    """
+    Send `message` to a TCP server at (host, port) and return everything the
+    server sends back.
 
+    Parameters:
+        host    - hostname or IP address to connect to
+        port    - TCP port to connect to
+        message - bytes to send to the server
+
+    Returns:
+        bytes received from the server (may be empty if the server sent nothing)
+    """
+
+    # Create the TCP socket and make the connection to the server
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((host, port))
+
+    # Send the message to the server
+    client_socket.sendall(message)
+
+    # Tell the server that I am done sending data ("half-close")
+    client_socket.shutdown(socket.SHUT_WR)
+
+    # Read all the data the server sends until its done
+    response = b''
+    while True:
+        data_chunk = client_socket.recv(2048)
+
+        if not data_chunk: break
+        else: response += data_chunk
+
+    # Close the connection and return the response.
+    client_socket.close()
+    return response
 
 
 class HTTPResponse:
     def __init__(self, body: bytes) -> None:
-        self._raw = body.decode()
-        tokens = self._raw.split('\r\n')
+        self.raw = body.decode()
+        tokens = self.raw.split('\r\n')
 
         self.protocol : str = regex.findall(r"HTTP\/[0-9].[0-9]", tokens[0])[0]
         self.code : int = int( regex.findall(r" [0-9]{3} ", tokens[0])[0].strip() )
@@ -39,13 +71,13 @@ class HTTPResponse:
             self.message = token + '\n' + self.message
 
     def __str__(self) -> str:
-        return self._raw.replace('\r\n', '\\r\\n')
+        return self.raw.replace('\r\n', '\\r\\n')
 
 
 class HTTPRequest:
-    def __init__(self, body: bytes) -> None:
-        self._raw = body.decode()
-        tokens = self._raw.split('\r\n')
+    def __init__(self, body: str) -> None:
+        self.raw = body
+        tokens = self.raw.split('\r\n')
 
         self.method : str = tokens[0].split(' ')[0]
         self.url : str = tokens[0].split(' ')[1]
@@ -59,81 +91,77 @@ class HTTPRequest:
             self.headers.append({ key: value })
 
     def __str__(self) -> str:
-            return self._raw.replace('\r\n', '\\r\\n')
+            return self.raw.replace('\r\n', '\\r\\n')
 
 
-
-
-
-# def formatted_fetch(body: str, port: int):
-#     response = fetch(TARGET_HOST, port, body.encode()).decode()
-#     # print(HTTPRequest("GET http://localhost:19000/ HTTP/1.0\r\nUser-Agent : LinuxUser/1.0\r\nUser-Agent : LinuxUser/1.0\r\n\r\n"))
-#     return response.replace('\r\n', '\\r\\n')
-
-# def perform_response_test(body: str):
-#     print('Clean Response   ->   ' + formatted_fetch(body, CLEAN_PORT) )
-#     # print('Buggy Response   ->   ' + formatted_fetch(body, BUGGY_PORT) )
-#     print()
-
-
-def run_test(test: Callable[[int], bool]):
-    print('Test Result for Clean  ->  ' + str( test( PORTS['clean'] ) ))
-    print('Test Result for Buggy  ->  ' + str( test( PORTS['buggy'] ) ))
-
-
-def test1(port: int) -> bool: # Testing basic request to make sure it knows a valid request
+def test_one(port: int) -> bool: # Testing basic request to make sure it knows a valid request
     body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
     response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
-
-    return response.code == 200 or response.code == 502
-
-# def test2(): # Testing unsupported HTTP protocol version # - 1 Discrepenecy Found
-#     print( 'Performing Test #2:' )
-#     perform_response_test( "GET http://localhost:19000/ HTTP/1.1\r\n\r\n" )
+    return response.code != 200 and response.code != 502
 
 
-# def test3(): # Testing malformed headers # - 1 Discrepency Found
-#     print( 'Performing Test #3:' )
-#     perform_response_test( "GET http://localhost:19000/ HTTP/1.0\r\nUser-Agent : LinuxUser/1.0\r\n\r\n" )
+
+def test_two(port : int) -> bool: # Testing unsupported HTTP protocol version # - 1 Discrepenecy Found
+    body = b'GET http://localhost:19000/ HTTP/1.1\r\n\r\n'
+    response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
+    return response.code != 400
 
 
-# def test4(): # Testing invalid HTTP method
-#     print( 'Performing Test #4:' )
-#     perform_response_test( "POST http://localhost:19000/ HTTP/1.0\r\n\r\n" )
+
+def test_three(port : int) -> bool: # Testing malformed headers # - 1 Discrepency Found
+    body = b'GET http://localhost:19000/ HTTP/1.0\r\nUser-Agent : LinuxUser/1.0\r\n\r\n'
+    response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
+    return response.code != 400
 
 
-# def test5(): # Testing to make sure path is not absolute on origin # - 2 Descrepency Found
-#     print( 'Performing Test #5:' )
-#     body = "GET http://localhost:19000/path HTTP/1.0\r\n\r\n"
-#     ports = {'clean': CLEAN_PORT, 'buggy': BUGGY_PORT}
 
-#     for name, port in ports.items():
-#         ORIGIN = MockOrigin(19000)
+def test_four(port: int) -> bool: # Testing to make sure path is relative on origin # - 1 Descrepency Found
+    origin = MockOrigin(MOCK_ORIGIN_PORT)
+    body = b'GET http://localhost:19000/path HTTP/1.0\r\n\r\n'
 
-#         print(f'{name.capitalize()} Response   ->   ' + formatted_fetch(body, port))
-#         print(f'Origin Recieved {name.capitalize()}   ->   ' + str(ORIGIN.received))
+    try:
+        fetch( TARGET_HOST, port, body )
+        if (origin.received is None): raise
+        received = HTTPRequest( origin.received.decode() )
+    finally:
+        origin.close()
 
-#         ORIGIN.close()
-#         time.sleep(1)
-#     print()
-
-# def test6(): # Testing to make sure path is not absolute on origin # - 1 Descrepency Found
-#     print( 'Performing Test #6:' )
-#     body = "GET http://localhost:19000/path HTTP/1.0\r\nConnection: keep-alive\r\n\r\n"
-#     ports = {'clean': CLEAN_PORT, 'buggy': BUGGY_PORT}
-
-#     for name, port in ports.items():
-#         ORIGIN = MockOrigin(19000)
-
-#         print(f'{name.capitalize()} Response   ->   ' + formatted_fetch(body, port))
-#         print(f'Origin Recieved {name.capitalize()}   ->   ' + str(ORIGIN.received))
-
-#         ORIGIN.close()
-#         time.sleep(1)
-#     print()
+    return received.url != '/path'
 
 
-    test1()
+
+def test_five(port: int) -> bool: # Testing to make mock origin receives host header # - 1 Descrepency Found
+    origin = MockOrigin(MOCK_ORIGIN_PORT)
+    body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
+
+    try:
+        fetch( TARGET_HOST, port, body )
+        if (origin.received is None): raise
+        received = HTTPRequest( origin.received.decode() )
+        if {'Host': 'localhost'} not in received.headers: return True
+    finally:
+        origin.close()
+
+    return False
+
+
+
+def test_six(port: int) -> bool: # Testing to make mock origin recieves changed connection header # - 1 Descrepency Found
+    origin = MockOrigin(MOCK_ORIGIN_PORT)
+    body = b'GET http://localhost:19000/ HTTP/1.0\r\nConnection: keep-alive\r\n\r\n'
+
+    try:
+        fetch( TARGET_HOST, port, body )
+        if (origin.received is None): raise
+        received = HTTPRequest( origin.received.decode() )
+        if {'Connection': 'close'} not in received.headers: return True
+    finally:
+        origin.close()
+
+    return False
+
+
+    # test_one()
 # def test7():
 #     print( 'Performing Test #7:' )
 #     body = "GET http://localhost:19000/ HTTP/1.0\r\n"
@@ -168,10 +196,20 @@ def test1(port: int) -> bool: # Testing basic request to make sure it knows a va
 
 
 if __name__ == "__main__":
-    run_test(test1)
-    # test2()
-    # test3()
-    # test4()
-    # test5()
-    # test6()
-    # test7()
+    tests : list[ Callable[[int], bool] ] = [
+        test_one,
+        test_two,
+        test_three,
+        test_four,
+        test_five,
+        test_six
+    ]
+
+    for test in tests:
+        print('Test Result for Buggy  ->  ' + str( test( PORTS['buggy'] ) ))
+        time.sleep(0.5)
+
+        print('Test Result for Clean  ->  ' + str( test( PORTS['clean'] ) ))
+        time.sleep(0.5)
+
+        print()
