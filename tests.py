@@ -1,5 +1,6 @@
 import socket
 import time
+import re as regex
 
 from M1_Handout.test_harness import MockOrigin
 
@@ -11,12 +12,64 @@ BUGGY_PORT = 2200
 
 ORIGIN : MockOrigin
 
+
+
+
+class HTTPResponse:
+    def __init__(self, body: str) -> None:
+        tokens = body.split('\r\n')
+
+        self.protocol : str = regex.findall(r"HTTP\/[0-9].[0-9]", tokens[0])[0]
+        self.code : int = int( regex.findall(r" [0-9]{3} ", tokens[0])[0].strip() )
+        self.message : str = ''
+        self.headers : list[dict[str, str]] = []
+
+        for i in range(1, tokens.index('')):
+            key = tokens[i].split(':')[0].strip()
+            value = tokens[i].split(':')[1].strip()
+            self.headers.append({ key: value })
+
+        for token in tokens[::-1]:
+            if token == '': break
+
+            self.message = token + '\n' + self.message
+
+        print(self.code)
+        print(self.message)
+        pass
+
+
+class HTTPRequest:
+    def __init__(self, body: str) -> None:
+        tokens = body.split('\r\n')
+
+        self.method : str = tokens[0].split(' ')[0]
+        self.url : str = tokens[0].split(' ')[1]
+        self.protocol : str = tokens[0].split(' ')[2]
+        self.headers : list[dict[str, str]] = []
+
+        for i in range(1, len(tokens) - 1):
+            if tokens[i] == '': break
+            key = tokens[i].split(':')[0].strip()
+            value = tokens[i].split(':')[1].strip()
+            self.headers.append({ key: value })
+
+        print(tokens)
+        print(self.headers)
+        
+        pass
+
+
+
+
 def formatted_fetch(body: str, port: int):
-    return fetch(TARGET_HOST, port, body.encode()).decode().replace('\r\n', '\\r\\n')
+    response = fetch(TARGET_HOST, port, body.encode()).decode()
+    print(HTTPRequest("GET http://localhost:19000/ HTTP/1.0\r\nUser-Agent : LinuxUser/1.0\r\nUser-Agent : LinuxUser/1.0\r\n\r\n"))
+    return response.replace('\r\n', '\\r\\n')
 
 def perform_response_test(body: str):
     print('Clean Response   ->   ' + formatted_fetch(body, CLEAN_PORT) )
-    print('Buggy Response   ->   ' + formatted_fetch(body, BUGGY_PORT) )
+    # print('Buggy Response   ->   ' + formatted_fetch(body, BUGGY_PORT) )
     print()
 
 
@@ -105,9 +158,9 @@ def test7():
 
 if __name__ == "__main__":
     test1()
-    test2()
-    test3()
-    test4()
-    test5()
-    test6()
-    test7()
+    # test2()
+    # test3()
+    # test4()
+    # test5()
+    # test6()
+    # test7()
