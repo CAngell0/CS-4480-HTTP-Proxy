@@ -7,7 +7,7 @@ import time
 import re as regex
 from typing import Callable
 
-from M1_Handout.test_harness import MockOrigin
+from test_harness import MockOrigin
 
 # Constants defined for all tests
 TARGET_HOST = 'localhost'
@@ -105,16 +105,7 @@ class HTTPRequest:
 
 
 
-
-def test_one(port: int) -> bool: # Testing basic request to make sure it knows a valid request
-    body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
-    response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
-    return response.code != 200 and response.code != 502
-
-
-
-
-def test_two(port : int) -> bool:
+def test_one(port : int) -> bool:
     """
     Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that's
     not using HTTP/1.0 protocol.
@@ -132,7 +123,7 @@ def test_two(port : int) -> bool:
 
 
 
-def test_three(port : int) -> bool:
+def test_two(port : int) -> bool:
     """
     Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that has
     malformed headers
@@ -146,19 +137,20 @@ def test_three(port : int) -> bool:
 
 
 
-def test_four(port: int) -> bool:
+def test_three(port: int) -> bool:
     """
-    Tests to make sure that the target proxy forwards the request using a relative URL path and not an
-    absolute one. Uses the mock origin to receive the request.
+    Tests to make sure that the target proxy forwards the request using a relative URI path and not an
+    absolute URI. Uses the mock origin to receive the request.
     
     - Successfully locates 1 bug
     """
     origin = MockOrigin(PORTS['mock_origin'])
     body = b'GET http://localhost:19000/path HTTP/1.0\r\n\r\n'
+    received : HTTPRequest
 
     try:
         fetch( TARGET_HOST, port, body )
-        if (origin.received is None): raise
+        if (origin.received is None): return True
         received = HTTPRequest( origin.received )
     finally:
         origin.close()
@@ -168,7 +160,7 @@ def test_four(port: int) -> bool:
 
 
 
-def test_five(port: int) -> bool:
+def test_four(port: int) -> bool:
     """
     Tests to make sure that the target proxy forwards the request with a correct Host header.
     
@@ -190,7 +182,7 @@ def test_five(port: int) -> bool:
 
 
 
-def test_six(port: int) -> bool:
+def test_five(port: int) -> bool:
     """
     Tests to make sure that the target proxy forwards the request with a corrected and non-missing Connection header.
     
@@ -211,7 +203,7 @@ def test_six(port: int) -> bool:
 
 
 
-def test_seven(port: int) -> bool:
+def test_six(port: int) -> bool:
     """
     Tests to make sure that the target proxy responds with the entire response no matter how big it is.
     For this test, it expected an 8KB long list of a repeating character as its response body.
@@ -233,49 +225,15 @@ def test_seven(port: int) -> bool:
     return False
 
 
-    # test_one()
-# def test7():
-#     print( 'Performing Test #7:' )
-#     body = "GET http://localhost:19000/ HTTP/1.0\r\n"
-#     ports = {'clean': CLEAN_PORT, 'buggy': BUGGY_PORT}
-
-#     for name, port in ports.items():
-#         ORIGIN = MockOrigin(19000)
-
-#         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#         client_socket.connect((TARGET_HOST, port))
-#         client_socket.sendall(body.encode())
-
-#         print(f'Origin Recieved {name.capitalize()} Before Complete  ->   ' + str(ORIGIN.received))
-    
-#         client_socket.sendall(b'\r\n')
-#         client_socket.shutdown(socket.SHUT_WR)
-
-#         response = b''
-#         while True:
-#             data_chunk = client_socket.recv(2048)
-    
-#             if not data_chunk: break
-#             else: response += data_chunk
-    
-#         print(f'Origin Recieved {name.capitalize()} After Complete  ->   ' + str(ORIGIN.received))
-#         print(f'{name.capitalize()} Response  ->  ' + response.decode().replace('\r\n', '\\r\\n'))
-
-#         client_socket.close()
-#         ORIGIN.close()
-
-#         time.sleep(1)
-
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        # test_one,
-        # test_two,
-        # test_three,
-        # test_four,
-        # test_five,
-        # test_six,
-        test_seven
+        test_one,
+        test_two,
+        test_three,
+        test_four,
+        test_five,
+        test_six
     ]
 
     for test in tests:
