@@ -210,6 +210,29 @@ def test_six(port: int) -> bool:
     return False
 
 
+
+def test_seven(port: int) -> bool:
+    """
+    Tests to make sure that the target proxy responds with the entire response no matter how big it is.
+    For this test, it expected an 8KB long list of a repeating character as its response body.
+
+    - Successfully locates 1 bug
+    """
+    expected_response_length = 8192
+    origin = MockOrigin( PORTS['mock_origin'], body_size = expected_response_length )
+    body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
+
+    try:
+        response = HTTPResponse( fetch( TARGET_HOST, port, body ) )
+        if (origin.received is None): raise
+
+        if len(response.message) - 1 != expected_response_length: return True
+    finally:
+        origin.close()
+
+    return False
+
+
     # test_one()
 # def test7():
 #     print( 'Performing Test #7:' )
@@ -246,12 +269,13 @@ def test_six(port: int) -> bool:
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        test_one,
-        test_two,
-        test_three,
-        test_four,
-        test_five,
-        test_six
+        # test_one,
+        # test_two,
+        # test_three,
+        # test_four,
+        # test_five,
+        # test_six,
+        test_seven
     ]
 
     for test in tests:
