@@ -45,7 +45,7 @@ lines = [f"{method} {path} HTTP/1.0"]
 <br/>
 
 > #### Bug #4  -  No Checks for Host Header
-> The ```handle_client()``` method didn't have any logic for handling missing ```Host``` headers in the 
+> The ```handle_client()``` method didn't have any logic for handling missing ```Host``` headers for the 
 > incoming requests. I added an if statement in lines 221-222 to fix this. I also converted the 
 > ```headers``` fields that are used around the codebase to be dictionaries instead of an array of
 > tuples. This made the checking and handling of headers to be a bit more readable. You can see these
@@ -62,4 +62,19 @@ for name, value in headers.items(): # Line 157
 # Header Checking
 if 'Host' not in parsed["headers"]:
     parsed["headers"]['Host'] = 'localhost'
+```
+
+<br/>
+
+> #### Bug #5  -  No Checks for Connection Header
+> The ```handle_client()``` method didn't have any logic for handling missing or invalid 
+> ```Connection``` headers for the incoming requests. I added that check on lines 224-226. If an
+> incoming request doesn't have the header ```Connection: close``` with that exact name or value.
+> It will add/overwrite the header to the request before forwarding it. This fixes the bug of the
+> proxy not adding the header when needed, or not changing it to ```close``` when needed.
+
+Code:
+```python
+if ('Connection', 'close') not in parsed["headers"].items():
+    parsed["headers"]['Connection'] = 'close'
 ```

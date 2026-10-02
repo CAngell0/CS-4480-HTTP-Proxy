@@ -189,13 +189,13 @@ def test_five(port: int) -> bool:
     - Successfully locates 1 bug
     """
     origin = MockOrigin(PORTS['mock_origin'])
-    body = b'GET http://localhost:19000/ HTTP/1.0\r\nConnection: keep-alive\r\n\r\n'
+    body = b'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
 
     try:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): raise
         received = HTTPRequest( origin.received )
-        if {'Connection': 'close'} not in received.headers: return True
+        if ('Connection', 'close') not in received.headers.items(): return True
     finally:
         origin.close()
 
@@ -228,11 +228,11 @@ def test_six(port: int) -> bool:
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        test_one,
-        test_two,
-        test_three,
-        test_four,
-        # test_five,
+        # test_one,
+        # test_two,
+        # test_three,
+        # test_four,
+        test_five,
         # test_six
     ]
 

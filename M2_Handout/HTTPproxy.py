@@ -88,7 +88,7 @@ def parse_request(raw):
         return None
     method, url, version = parts
 
-    headers = {}
+    headers = {} #! Flag 4
     for line in lines[1:]:
         if not line:
             continue
@@ -104,7 +104,7 @@ def parse_request(raw):
         if not name:
             return None
         
-        headers[name] = value
+        headers[name] = value #! Flag 4
 
     return {
         "method": method,
@@ -220,6 +220,9 @@ def handle_client(client_sock, client_addr):
 
         if 'Host' not in parsed["headers"]: #! Flag 4
             parsed["headers"]['Host'] = 'localhost'
+
+        if ('Connection', 'close') not in parsed["headers"].items():  #! Flag 5
+            parsed["headers"]['Connection'] = 'close'
 
         forwarded = build_forwarded_request(
             parsed["method"], parsed["url"], path, host, parsed["headers"]
