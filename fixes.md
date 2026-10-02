@@ -78,3 +78,22 @@ Code:
 if ('Connection', 'close') not in parsed["headers"].items():
     parsed["headers"]['Connection'] = 'close'
 ```
+
+<br/>
+
+> #### Bug #6  -  Sending Chunk to Client Only Done Once
+> Inside the ```forward_and_stream_response()``` method. It only sends one data chunk from the origin
+> server back to the client. If the total request is big enough to be split into multiple chunks, the
+> the proxy needs to recieve and send those chunks repeatadely. And currently, it only does this once.
+> I changed the streaming code on lines 172-175 to run in a loop and to keep looping chunks until it's
+> not receiving any more data chunks from the origin. This fixes the bug where the proxy cuts longer
+> responses short when the origin sends one back.
+
+Code:
+```python
+while True:
+    chunk = origin_sock.recv(SMALL_BUFFER)
+    if not chunk: break
+
+    client_sock.sendall(chunk)
+```

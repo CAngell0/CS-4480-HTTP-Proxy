@@ -169,8 +169,10 @@ def forward_and_stream_response(client_sock, host, port, forwarded_request):
         origin_sock = socket.create_connection((host, port), timeout=ORIGIN_TIMEOUT)
         origin_sock.sendall(forwarded_request)
 
-        chunk = origin_sock.recv(SMALL_BUFFER)
-        if chunk:
+        while True: #! Flag 6
+            chunk = origin_sock.recv(SMALL_BUFFER)
+            if not chunk: break
+
             client_sock.sendall(chunk)
 
     except (socket.gaierror, ConnectionRefusedError, socket.timeout, OSError):
