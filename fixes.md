@@ -41,3 +41,25 @@ Code:
 ```python
 lines = [f"{method} {path} HTTP/1.0"]
 ```
+
+<br/>
+
+> #### Bug #4  -  No Checks for Host Header
+> The ```handle_client()``` method didn't have any logic for handling missing ```Host``` headers in the 
+> incoming requests. I added an if statement in lines 221-222 to fix this. I also converted the 
+> ```headers``` fields that are used around the codebase to be dictionaries instead of an array of
+> tuples. This made the checking and handling of headers to be a bit more readable. You can see these
+> changes on lines 91, 107, and 157. All this fixed the bug where the proxy wasn't garenteeing a host
+> header for the origin. By default, if the header is missing it will add ```{'Host': 'localhost'}```
+> to the forwarded request.
+Code:
+```python
+# Dictionary Changes
+headers = {} # Line 91
+headers[name] = value # Line 107
+for name, value in headers.items(): # Line 157
+
+# Header Checking
+if 'Host' not in parsed["headers"]:
+    parsed["headers"]['Host'] = 'localhost'
+```

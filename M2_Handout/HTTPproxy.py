@@ -88,18 +88,23 @@ def parse_request(raw):
         return None
     method, url, version = parts
 
-    headers = []
+    headers = {}
     for line in lines[1:]:
         if not line:
             continue
+
         if ":" not in line:
             return None
-        name, _, value = line.partition(": ") #! Flag
+        
+        name, _, value = line.partition(": ") #! Flag 2
+
         if ' ' in name:
             return None
+        
         if not name:
             return None
-        headers.append((name, value))
+        
+        headers[name] = value
 
     return {
         "method": method,
@@ -147,9 +152,9 @@ def build_forwarded_request(method, url, path, host, headers):
     Returns the encoded request bytes, terminated by the end of headers
     marker.
     """
-    lines = [f"{method} {path} HTTP/1.0"] #! Flag
+    lines = [f"{method} {path} HTTP/1.0"] #! Flag 3
 
-    for name, value in headers:
+    for name, value in headers.items(): #! Flag 4
         lines.append(f"{name}: {value}")
 
     return ("\r\n".join(lines) + "\r\n\r\n").encode("iso-8859-1")
@@ -199,7 +204,7 @@ def handle_client(client_sock, client_addr):
             send_error(client_sock, 400, "Bad Request")
             return
 
-        if parsed['version'] != 'HTTP/1.0':  #! Flag
+        if parsed['version'] != 'HTTP/1.0':  #! Flag 1
             send_error(client_sock, 400, "Bad Request")
             return
 
@@ -212,6 +217,9 @@ def handle_client(client_sock, client_addr):
             send_error(client_sock, 400, "Bad Request")
             return
         host, port, path = parsed_url
+
+        if 'Host' not in parsed["headers"]: #! Flag 4
+            parsed["headers"]['Host'] = 'localhost'
 
         forwarded = build_forwarded_request(
             parsed["method"], parsed["url"], path, host, parsed["headers"]

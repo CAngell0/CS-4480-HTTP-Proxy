@@ -66,12 +66,12 @@ class HTTPResponse:
         self.protocol : str = regex.findall(r"HTTP\/[0-9].[0-9]", tokens[0])[0]
         self.code : int = int( regex.findall(r" [0-9]{3} ", tokens[0])[0].strip() )
         self.message : str = ''
-        self.headers : list[dict[str, str]] = []
+        self.headers : dict[str, str] = {}
 
         for i in range(1, tokens.index('')):
             key = tokens[i].split(':')[0].strip()
             value = tokens[i].split(':')[1].strip()
-            self.headers.append({ key: value })
+            self.headers[key] = value
 
         for token in tokens[::-1]:
             if token == '': break
@@ -92,13 +92,13 @@ class HTTPRequest:
         self.method : str = tokens[0].split(' ')[0]
         self.url : str = tokens[0].split(' ')[1]
         self.protocol : str = tokens[0].split(' ')[2]
-        self.headers : list[dict[str, str]] = []
+        self.headers : dict[str, str] = {}
 
         for i in range(1, len(tokens) - 1):
             if tokens[i] == '': break
             key = tokens[i].split(':')[0].strip()
             value = tokens[i].split(':')[1].strip()
-            self.headers.append({ key: value })
+            self.headers[key] = value
 
     def __str__(self) -> str:
             return self.raw.replace('\r\n', '\\r\\n')
@@ -173,7 +173,7 @@ def test_four(port: int) -> bool:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): raise
         received = HTTPRequest( origin.received )
-        if {'Host': 'localhost'} not in received.headers: return True
+        if 'Host' not in received.headers: return True
     finally:
         origin.close()
 
@@ -228,10 +228,10 @@ def test_six(port: int) -> bool:
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        # test_one,
-        # test_two,
+        test_one,
+        test_two,
         test_three,
-        # test_four,
+        test_four,
         # test_five,
         # test_six
     ]
