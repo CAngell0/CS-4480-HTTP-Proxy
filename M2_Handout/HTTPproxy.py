@@ -57,7 +57,7 @@ def recv_until_end_of_headers(sock):
     request grew past the size cap.
     """
     buf = b""
-    while b"\r\n\r\n" not in buf: #! Flag 6
+    while b"\r\n\r\n" not in buf:
         chunk = sock.recv(RECV_CHUNK)
         if not chunk:
             return None
@@ -90,7 +90,7 @@ def parse_request(raw):
         return None
     method, url, version = parts
 
-    headers = {} #! Flag 3 p2
+    headers = {}
     for line in lines[1:]:
         if not line:
             continue
@@ -98,7 +98,7 @@ def parse_request(raw):
         if ":" not in line:
             return None
         
-        name, _, value = line.partition(": ") #! Flag 2
+        name, _, value = line.partition(": ")
 
         if ' ' in name or ':' in name:
             return None
@@ -106,7 +106,7 @@ def parse_request(raw):
         if not name:
             return None
         
-        headers[name] = value #! Flag 3 p2
+        headers[name] = value
 
     return {
         "method": method,
@@ -153,9 +153,9 @@ def build_forwarded_request(method, url, path, host, headers):
     Returns the encoded request bytes, terminated by the end of headers
     marker.
     """
-    lines = [f"{method} {path} HTTP/1.0"] #! Flag 3 p1
+    lines = [f"{method} {path} HTTP/1.0"]
 
-    for name, value in headers.items(): #! Flag 3 p2
+    for name, value in headers.items():
         lines.append(f"{name}: {value}")
 
     return ("\r\n".join(lines) + "\r\n\r\n").encode("iso-8859-1")
@@ -170,7 +170,7 @@ def forward_and_stream_response(client_sock, host, port, forwarded_request):
         origin_sock = socket.create_connection((host, port), timeout=ORIGIN_TIMEOUT)
         origin_sock.sendall(forwarded_request)
 
-        while True: #! Flag 5
+        while True:
             chunk = origin_sock.recv(SMALL_BUFFER)
             if not chunk: break
 
@@ -207,7 +207,7 @@ def handle_client(client_sock, client_addr):
             send_error(client_sock, 400, "Bad Request")
             return
 
-        if parsed['version'] != 'HTTP/1.0':  #! Flag 1
+        if parsed['version'] != 'HTTP/1.0':
             send_error(client_sock, 400, "Bad Request")
             return
 
@@ -221,10 +221,10 @@ def handle_client(client_sock, client_addr):
             return
         host, port, path = parsed_url
 
-        if ('Host', host) not in parsed["headers"].items(): #! Flag 3 p2
+        if ('Host', host) not in parsed["headers"].items():
             parsed["headers"]['Host'] = host
 
-        if ('Connection', 'close') not in parsed["headers"].items():  #! Flag 4
+        if ('Connection', 'close') not in parsed["headers"].items():
             parsed["headers"]['Connection'] = 'close'
 
         forwarded = build_forwarded_request(
@@ -267,7 +267,7 @@ def serve(interface, port):
                 target = handle_client, 
                 args = (client_sock, client_addr), 
                 daemon = True
-            ).start() #! Flag 7
+            ).start()
     except KeyboardInterrupt:
         pass
     finally:
