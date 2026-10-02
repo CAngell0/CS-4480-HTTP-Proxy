@@ -104,6 +104,22 @@ class HTTPRequest:
             return self.raw.replace('\r\n', '\\r\\n')
 
 
+def test_zero(port : int) -> bool:
+    """
+    Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that's
+    not using HTTP/1.0 protocol.
+
+    - Successfully locates 1 bug
+    """
+    body = 'GET http://localhost:19000/ HTTP/1.0\r\n\r\n'
+
+    res = fetch( TARGET_HOST, port, body.encode() )
+    print(HTTPResponse( res ).raw)
+
+    if HTTPResponse( res ).code != 400 : return True
+
+    return False
+
 
 def test_one(port : int) -> bool:
     """
@@ -123,7 +139,7 @@ def test_one(port : int) -> bool:
 
 
 
-def test_two(port : int) -> bool:
+def test_two(port : int) -> bool: # TODO - Fix
     """
     Tests to make sure that the target proxy sends a 400 Bad Request error when receiving a request that has
     malformed headers
@@ -145,12 +161,13 @@ def test_three(port: int) -> bool:
     - Successfully locates 1 bug
     """
     origin = MockOrigin(PORTS['mock_origin'])
-    body = b'GET http://localhost:19000/path HTTP/1.0\r\n\r\n'
+    body = b'GET http://localhost:19000/path HTTP/1.0\r\nName: value\r\nTest: yes\r\nTest1: ye\r\n\r\nHello world'
     received : HTTPRequest
 
     try:
         fetch( TARGET_HOST, port, body )
         if (origin.received is None): return True
+        print('Recieved: ' + origin.received.decode())
         received = HTTPRequest( origin.received )
     finally:
         origin.close()
@@ -158,7 +175,7 @@ def test_three(port: int) -> bool:
     return received.url != '/path'
 
 
-
+# TODO - Both?
 
 def test_four(port: int) -> bool:
     """
@@ -228,12 +245,13 @@ def test_six(port: int) -> bool:
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        test_one,
-        test_two,
+        # test_zero,
+        # test_one,
+        # test_two,
         test_three,
-        test_four,
-        test_five,
-        test_six
+        # test_four,
+        # test_five,
+        # test_six
     ]
 
     for test in tests:

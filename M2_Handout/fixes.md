@@ -18,20 +18,20 @@ if parsed['version'] != 'HTTP/1.0':
 > #### Bug #2  -  Incorrect Parsing of HTTP Headers
 > The parsing of HTTP headers inside the parse_request method was a bit too lenient for the proxy
 > specifications. I changed the partition call on line 97 to partition for ```": "``` instead of 
-> ```":"```. And then I had it check for spaces in the header name, and return None if it found any.
-> This fixed the bug for not responding with ```400 Bad Request``` whenever there was a malformed 
-> header.
+> ```":"```. And then I had it check for spaces or a colon 
+> in the header name, and return None if it found any. This fixed the bug for not responding with 
+> ```400 Bad Request``` whenever there was a malformed header.
 
 Code:
 ```python
 name, _, value = line.partition(": ")
-if ' ' in name:
+if ' ' in name or ':' in name:
     return None
 ```
 
 <br/>
 
-> #### Bug #3  -  Incorrect Construction of Forwarded Request
+> #### Bug #3 Part #2  -  Incorrect Construction of Forwarded Request
 > How forwarded requests are put together in ```build_forwarded_requests()``` method was a little off.
 > When making the request, it passed the absolute URL using the method's ```url``` parameter. Instead
 > of using the ```path``` paremeter like it's supposed to. I made this small change on line 150. This
@@ -44,14 +44,14 @@ lines = [f"{method} {path} HTTP/1.0"]
 
 <br/>
 
-> #### Bug #4  -  No Checks for Host Header
+> #### Bug #3 Part #2  -  No Checks for Host Header
 > The ```handle_client()``` method didn't have any logic for handling missing ```Host``` headers for the 
 > incoming requests. I added an if statement in lines 221-222 to fix this. I also converted the 
 > ```headers``` fields that are used around the codebase to be dictionaries instead of an array of
 > tuples. This made the checking and handling of headers to be a bit more readable. You can see these
 > changes on lines 91, 107, and 157. All this fixed the bug where the proxy wasn't garenteeing a host
-> header for the origin. By default, if the header is missing it will add ```{'Host': 'localhost'}```
-> to the forwarded request.
+> header for the origin. By default, if the header is missing or with the wrong value it will add/
+> overwrite the header to ```{'Host': 'localhost'}``` for the forwarded request.
 Code:
 ```python
 # Dictionary Changes
@@ -60,13 +60,13 @@ headers[name] = value # Line 107
 for name, value in headers.items(): # Line 157
 
 # Header Checking
-if 'Host' not in parsed["headers"]:
+if ('Host', 'localhost') not in parsed["headers"].items():
     parsed["headers"]['Host'] = 'localhost'
 ```
 
 <br/>
 
-> #### Bug #5  -  No Checks for Connection Header
+> #### Bug #4  -  No Checks for Connection Header
 > The ```handle_client()``` method didn't have any logic for handling missing or invalid 
 > ```Connection``` headers for the incoming requests. I added that check on lines 224-226. If an
 > incoming request doesn't have the header ```Connection: close``` with that exact name or value.
@@ -81,7 +81,7 @@ if ('Connection', 'close') not in parsed["headers"].items():
 
 <br/>
 
-> #### Bug #6  -  Sending Chunk to Client Only Done Once
+> #### Bug #5  -  Sending Chunk to Client Only Done Once
 > Inside the ```forward_and_stream_response()``` method. It only sends one data chunk from the origin
 > server back to the client. If the total request is big enough to be split into multiple chunks, the
 > the proxy needs to recieve and send those chunks repeatadely. And currently, it only does this once.
@@ -96,6 +96,18 @@ while True:
     if not chunk: break
 
     client_sock.sendall(chunk)
+```
+
+<br/>
+
+> #### Bug #6  -  Forwarding Request Pre-Maturely
+> Inside the ```recv_until_end_of_headers()``` method, the while loop condition ends when the buffer
+> contains a ```\r\n```. However, the specification says the proxy should be done receiving until it
+> sees a ```\r\n\r\n```. I made this change to the while loop in like 60.
+
+Code:
+```python
+while b"\r\n\r\n" not in buf:
 ```
 
 > #### Bug #7  -  Client Handling Not Using Concurrency
