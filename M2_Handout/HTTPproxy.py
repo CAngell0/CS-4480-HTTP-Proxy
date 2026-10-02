@@ -94,9 +94,9 @@ def parse_request(raw):
             continue
         if ":" not in line:
             return None
-        name, _, value = line.partition(":")
-        name = name.strip()
-        value = value.strip()
+        name, _, value = line.partition(": ") #! Flag
+        if ' ' in name:
+            return None
         if not name:
             return None
         headers.append((name, value))
@@ -199,7 +199,7 @@ def handle_client(client_sock, client_addr):
             send_error(client_sock, 400, "Bad Request")
             return
 
-        if parsed['version'] != 'HTTP/1.0':
+        if parsed['version'] != 'HTTP/1.0':  #! Flag
             send_error(client_sock, 400, "Bad Request")
             return
 
