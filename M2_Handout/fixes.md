@@ -97,3 +97,18 @@ while True:
 
     client_sock.sendall(chunk)
 ```
+
+> #### Bug #7  -  Client Handling Not Using Concurrency
+> The ```serve()``` method doesn't use any concurrency logic to handle clients. It serves them under 
+> a single thread. Which, if a client stalls it will block this thread. A way to fix this is to
+> offload clients to their own thread. I made this change on lines 266-270. This fixes the bug where
+> the proxy gets hun on stalling clients and can't serve others while that's happening.
+
+Code:
+```python
+threading.Thread(
+    target = handle_client, 
+    args = (client_sock, client_addr), 
+    daemon = True
+).start()
+```

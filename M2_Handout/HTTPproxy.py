@@ -14,6 +14,8 @@ Defaults: listen on localhost:2100.
 
 import argparse
 import socket
+import asyncio
+import threading
 import sys
 
 
@@ -112,7 +114,6 @@ def parse_request(raw):
         "version": version,
         "headers": headers,
     }
-
 
 def parse_absolute_url(url):
     """Parse http://host[:port]/path into (host, port, path) or return None."""
@@ -262,7 +263,11 @@ def serve(interface, port):
     try:
         while True:
             client_sock, client_addr = listen_sock.accept()
-            handle_client(client_sock, client_addr)
+            threading.Thread(
+                target = handle_client, 
+                args = (client_sock, client_addr), 
+                daemon = True
+            ).start() #! Flag 7
     except KeyboardInterrupt:
         pass
     finally:
