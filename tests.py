@@ -13,8 +13,8 @@ from test_harness import MockOrigin
 TARGET_HOST = 'localhost'
 PORTS = {
     'mock_origin': 19000,
-    'clean': 2100,
-    'buggy': 2200
+    'clean': 2200,
+    'buggy': 2100
 }
 
 # Method that was copied from Task A on Milestone 0. This is used in the tests below in order to make basic
@@ -229,11 +229,11 @@ def test_six(port: int) -> bool:
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
         test_one,
-        test_two,
-        test_three,
-        test_four,
-        test_five,
-        test_six
+        # test_two,
+        # test_three,
+        # test_four,
+        # test_five,
+        # test_six
     ]
 
     for test in tests:

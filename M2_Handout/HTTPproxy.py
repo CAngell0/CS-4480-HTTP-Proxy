@@ -199,6 +199,10 @@ def handle_client(client_sock, client_addr):
             send_error(client_sock, 400, "Bad Request")
             return
 
+        if parsed['version'] != 'HTTP/1.0':
+            send_error(client_sock, 400, "Bad Request")
+            return
+
         if parsed["method"] != "GET":
             send_error(client_sock, 501, "Not Implemented")
             return
