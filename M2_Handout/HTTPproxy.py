@@ -221,8 +221,8 @@ def handle_client(client_sock, client_addr):
             return
         host, port, path = parsed_url
 
-        if ('Host', 'localhost') not in parsed["headers"].items(): #! Flag 3 p2
-            parsed["headers"]['Host'] = 'localhost'
+        if ('Host', host) not in parsed["headers"].items(): #! Flag 3 p2
+            parsed["headers"]['Host'] = host
 
         if ('Connection', 'close') not in parsed["headers"].items():  #! Flag 4
             parsed["headers"]['Connection'] = 'close'
