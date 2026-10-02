@@ -36,7 +36,7 @@ def serve_one(port: int) -> bytes:
         the bytes the client sent (without the "REPLY: " prefix)
     """
 
-    # Create the socket (with socket socket reuse enabled, TCP and correc binding)
+    # Create the socket (with socket socket reuse enabled, TCP and correct binding)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('localhost', port))
@@ -48,21 +48,21 @@ def serve_one(port: int) -> bytes:
     client, _ = server_socket.accept()
 
 
-    # Read all packets until the client is done sending and put them in the 'recieved' variable
-    recieved = b''
+    # Read all packets until the client is done sending and put them in the 'received' variable
+    received = b''
     while True:
         data_chunk = client.recv(2048)
 
         if not data_chunk: break
-        else: recieved += data_chunk
+        else: received += data_chunk
 
     # Send the data back with the REPLY prefix
-    client.sendall(b'REPLY: ' + recieved)
+    client.sendall(b'REPLY: ' + received)
 
-    # Close both socket connections and return the recieved data
+    # Close both socket connections and return the received data
     client.close()
     server_socket.close()
-    return recieved
+    return received
 
 
 if __name__ == "__main__":

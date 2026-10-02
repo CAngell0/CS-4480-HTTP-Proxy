@@ -34,7 +34,7 @@ if ' ' in name or ':' in name:
 > #### Bug #3 Part #1  -  Incorrect Construction of Forwarded Request
 > How forwarded requests are put together in ```build_forwarded_requests()``` method was a little off.
 > When making the request, it passed the absolute URL using the method's ```url``` parameter. Instead
-> of using the ```path``` paremeter like it's supposed to. I made this small change on line 156. This
+> of using the ```path``` parameter like it's supposed to. I made this small change on line 156. This
 > fixed the bug of the proxy forwarding the absolute URL instead of the relative path to the origin.
 
 Code:
@@ -49,7 +49,7 @@ lines = [f"{method} {path} HTTP/1.0"]
 > incoming requests. I added an if statement in lines 224-225 to fix this. I also converted the 
 > ```headers``` fields that are used around the codebase to be dictionaries instead of an array of
 > tuples. This made the checking and handling of headers to be a bit more readable. You can see these
-> changes on lines 91, 107, and 157. All this fixed the bug where the proxy wasn't garenteeing a host
+> changes on lines 91, 107, and 157. All this fixed the bug where the proxy wasn't guaranteeing a host
 > header for the origin. By default, if the header is missing or with the wrong value it will add/
 > overwrite the header to ```{'Host': *url_host*}``` for the forwarded request.
 
@@ -85,7 +85,7 @@ if ('Connection', 'close') not in parsed["headers"].items():
 > #### Bug #5  -  Sending Chunk to Client Only Done Once
 > Inside the ```forward_and_stream_response()``` method. It only sends one data chunk from the origin
 > server back to the client. If the total request is big enough to be split into multiple chunks, the
-> the proxy needs to recieve and send those chunks repeatadely. And currently, it only does this once.
+> the proxy needs to receive and send those chunks repeatedly. And currently, it only does this once.
 > I changed the streaming code on lines 173-177 to run in a loop and to keep looping chunks until it's
 > not receiving any more data chunks from the origin. This fixes the bug where the proxy cuts longer
 > responses short when the origin sends one back.
