@@ -147,7 +147,7 @@ def build_forwarded_request(method, url, path, host, headers):
     Returns the encoded request bytes, terminated by the end of headers
     marker.
     """
-    lines = [f"{method} {url} HTTP/1.0"]
+    lines = [f"{method} {path} HTTP/1.0"] #! Flag
 
     for name, value in headers:
         lines.append(f"{name}: {value}")

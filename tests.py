@@ -228,9 +228,9 @@ def test_six(port: int) -> bool:
 # Runs all the tests in a loop with correct timing, port targeting and nicely formatted print statements.
 if __name__ == "__main__":
     tests : list[ Callable[[int], bool] ] = [
-        test_one,
-        test_two,
-        # test_three,
+        # test_one,
+        # test_two,
+        test_three,
         # test_four,
         # test_five,
         # test_six
